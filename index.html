@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>0x06. RAG Pipeline</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{--bg:#F7F3E8;--fg:#2B2A28;--muted:#6B6456;--accent:#8A6D12;--accent-2:#1F3A5F;--card:#ffffff;--border:#8C5A2B;--code-bg:#282c34;--code-fg:#f8f8f2;}
+    *{box-sizing:border-box;}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.55;}
+    header{background:var(--accent-2);color:white;padding:28px 40px;border-bottom:4px solid var(--accent);}
+    header .eyebrow{text-transform:uppercase;font-size:12px;letter-spacing:1.5px;opacity:.75;margin-bottom:8px;}
+    header h1{margin:0;font-size:28px;font-weight:600;}header .meta{margin-top:10px;font-size:13px;opacity:.8;}
+    main{max-width:960px;margin:0 auto;padding:32px 24px 80px;}
+    section.card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:24px 28px;margin-bottom:24px;}
+    h2{color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:6px;margin-top:0;font-size:20px;}
+    ul{padding-left:22px;}li{margin-bottom:4px;}a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+    code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:13px;background:#eee;padding:1px 5px;border-radius:3px;}
+    pre{background:var(--code-bg);color:var(--code-fg);padding:14px 16px;border-radius:5px;overflow-x:auto;font-size:13px;line-height:1.45;}pre code{background:transparent;color:inherit;padding:0;}
+    .task{border-left:4px solid var(--accent);padding:16px 20px;margin:20px 0;background:#fafafa;border-radius:0 4px 4px 0;}
+    .task-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+    .task-num{background:var(--accent);color:white;font-weight:700;padding:2px 10px;border-radius:3px;font-size:13px;letter-spacing:.5px;}
+    .task-title{font-weight:600;font-size:17px;color:var(--accent-2);}
+    .repo-info{margin-top:12px;padding:10px 14px;background:#eef0f6;border-radius:4px;font-size:13px;color:var(--muted);}.repo-info strong{color:var(--fg);}
+    .quiz-q{background:#fff8ec;border:1px solid #f0dca4;padding:12px 16px;border-radius:4px;margin:12px 0;}
+    .quiz-q p{margin:4px 0 10px;font-weight:600;}.quiz-q label{display:block;margin:3px 0;padding:4px 8px;font-size:14px;cursor:pointer;border-radius:3px;border:1px solid transparent;}
+    .quiz-q label.correct{background:#e4f5e4;border-color:#7fbf7f;}.quiz-q label.wrong{background:#fbe4e4;border-color:#d98a8a;}
+    .quiz-q .feedback{margin-top:10px;padding:8px 12px;font-size:13px;border-radius:3px;display:none;}.quiz-q .feedback.show{display:block;}.quiz-q .feedback.ok{background:#e4f5e4;color:#2f6d2f;}.quiz-q .feedback.ko{background:#fbe4e4;color:#8a2f2f;}
+    .quiz-summary{margin-top:16px;font-weight:600;color:var(--accent-2);}
+    footer{text-align:center;padding:24px;font-size:12px;color:var(--muted);}
+    table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;}th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;}th{background:#f2f2f2;}
+    .res-tags { margin-left: 6px; white-space: nowrap; }
+    .res-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.5;
+      padding: 0 7px;
+      margin-left: 4px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: #fff;
+      vertical-align: 1px;
+    }
+    .res-tag.short  { background: #e4f5ea; border-color: #b5dfc3; color: #2f6d43; }
+    .res-tag.medium { background: #fdf1dc; border-color: #ecd29d; color: #8a5a00; }
+    .res-tag.long   { background: #F6E3DF; border-color: #eab3bb; color: #9a2336; }
+    .res-tag.broken { background: #F6E3DF; border-color: #d98a8a; color: #8a2f2f; }
+    .res-legend { font-size: 12px; color: var(--muted); margin: -6px 0 10px; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">AI Engineer Curriculum &mdash; Semantic Search &amp; RAG</div>
+  <h1>0x06. RAG Pipeline &mdash; Retrieval-Augmented Generation</h1>
+  <div class="meta">By: zerub &middot; Weight: 1 &middot; Level: intermediate &middot; Requires: <code>ANTHROPIC_API_KEY</code></div>
+</header>
+<main>
+
+  <section class="card">
+    <h2>Concepts</h2>
+    <ul>
+      <li>Why RAG beats parametric memory for factual queries</li>
+      <li>Text chunking strategies and overlap</li>
+      <li>Vector stores (ChromaDB)</li>
+      <li>The retrieve-then-read pattern</li>
+      <li>Source citation and hallucination reduction</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Resources</h2>
+    <p><strong>Read or watch:</strong></p>
+      <p class="res-legend">Text or Video &middot; Short &le; 10 min &middot; Medium 11&ndash;30 min &middot; Long &gt; 30 min (reading at ~230 words/min)</p>
+    <ul>
+      <li><a target="_blank" rel="noopener noreferrer" href="https://research.ibm.com/blog/retrieval-augmented-generation-RAG">What is RAG? &mdash; IBM</a> <span class="res-tags"><span class="res-tag">Text</span><span class="res-tag short">Short &middot; ~6 min</span></span></li>
+      <li><a target="_blank" rel="noopener noreferrer" href="https://docs.trychroma.com/">ChromaDB documentation</a> <span class="res-tags"><span class="res-tag">Text</span><span class="res-tag short">Short &middot; ~3 min</span></span></li>
+      <li><a target="_blank" rel="noopener noreferrer" href="https://docs.anthropic.com/en/docs/build-with-claude/retrieval-augmented-generation">Anthropic &mdash; Building effective RAG systems</a> <span class="res-tags"><span class="res-tag">Text</span><span class="res-tag broken">&#9888; Broken link</span></span></li>
+      <li><a target="_blank" rel="noopener noreferrer" href="https://www.pinecone.io/learn/rag-vs-fine-tuning/">RAG vs fine-tuning &mdash; when to use each</a> <span class="res-tags"><span class="res-tag">Text</span><span class="res-tag broken">&#9888; Broken link</span></span></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Learning Objectives</h2>
+    <p>At the end of this project, you are expected to explain to anyone, <strong>without the help of Google</strong>:</p>
+    <ul>
+      <li>What RAG is and why it beats relying on a model's parametric memory</li>
+      <li>What chunking is, why chunk size matters, and what overlap does</li>
+      <li>What a vector store is and how it differs from a SQL database</li>
+      <li>What the retrieve-then-read pattern is</li>
+      <li>How to reduce hallucinations with source citations</li>
+      <li>What a context window budget is and how retrieved chunks consume it</li>
+      <li>When RAG fails (low-quality chunks, retrieval misses, context overflow)</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Requirements</h2>
+    <ul>
+      <li>Python 3.11+ &middot; <code>pip install anthropic chromadb sentence-transformers</code></li>
+      <li><code>ANTHROPIC_API_KEY</code> must be set</li>
+      <li>All functions must have a docstring</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Quiz questions</h2>
+
+    <div class="quiz-q" data-correct="2" data-explain="Overlap means adjacent chunks share some characters at their boundary. This prevents a sentence that straddles a chunk boundary from being split into two meaningless halves. Without overlap, key context at chunk edges can be lost.">
+      <p>Question #0</p>
+      <p>Why do RAG chunking strategies often use <em>overlapping</em> chunks?</p>
+      <label><input type="radio" name="q0" value="0"> To increase the total number of chunks for better recall</label>
+      <label><input type="radio" name="q0" value="1"> To reduce the vector store size</label>
+      <label><input type="radio" name="q0" value="2"> To prevent relevant context from being cut off at chunk boundaries</label>
+      <label><input type="radio" name="q0" value="3"> Overlap improves embedding quality</label>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="quiz-q" data-correct="0" data-explain="RAG is best for knowledge that changes frequently (live databases, product catalogues, recent news) or that is too large to fit in a context window. Fine-tuning is better for teaching a model a new skill or style, not for injecting specific facts that need to be kept fresh.">
+      <p>Question #1</p>
+      <p>When should you choose RAG over fine-tuning?</p>
+      <label><input type="radio" name="q1" value="0"> When your knowledge base changes frequently or is too large for the context window</label>
+      <label><input type="radio" name="q1" value="1"> When you want the model to adopt a new writing style</label>
+      <label><input type="radio" name="q1" value="2"> When inference latency is the primary concern</label>
+      <label><input type="radio" name="q1" value="3"> When you have fewer than 100 documents</label>
+      <div class="feedback"></div>
+    </div>
+
+    <div class="quiz-summary" id="quiz-summary"></div>
+  </section>
+
+  <section class="card">
+    <h2>Tasks</h2>
+
+    <div class="task">
+      <div class="task-head"><span class="task-num">0. Text chunking</span><span class="task-title">mandatory</span></div>
+      <p>Write <code>chunk_text(text, chunk_size=500, overlap=50)</code>. Splits on sentence boundaries when possible; adjacent chunks share <code>overlap</code> characters.</p>
+<pre><code>$ ./0-main.py
+original length : 2048 chars
+chunk count     : 5
+overlap check   : True</code></pre>
+      <div class="repo-info"><strong>Repo:</strong> &middot; GitHub: <code>zerub</code> &middot; Directory: <code>0x06-rag-pipeline</code> &middot; File: <code>0-chunking.py</code></div>
+    </div>
+
+    <div class="task">
+      <div class="task-head"><span class="task-num">1. ChromaDB document store</span><span class="task-title">mandatory</span></div>
+      <p>Write class <code>DocStore</code> backed by an in-memory ChromaDB collection with <code>add_documents()</code>, <code>query()</code>, and <code>count()</code> methods.</p>
+<pre><code>$ ./1-main.py
+stored: 10 documents
+result 1 (dist 0.18): "Gradient descent updates weights by..."</code></pre>
+      <div class="repo-info"><strong>Repo:</strong> &middot; GitHub: <code>zerub</code> &middot; Directory: <code>0x06-rag-pipeline</code> &middot; File: <code>1-doc_store.py</code></div>
+    </div>
+
+    <div class="task">
+      <div class="task-head"><span class="task-num">2. Ingestion pipeline</span><span class="task-title">mandatory</span></div>
+      <p>Write <code>ingest_file(path, store, chunk_size=500, overlap=50)</code> that reads a file, chunks it, and stores chunks with source metadata.</p>
+<pre><code>$ ./2-main.py
+ingested "sample_doc.txt" → 12 chunks</code></pre>
+      <div class="repo-info"><strong>Repo:</strong> &middot; GitHub: <code>zerub</code> &middot; Directory: <code>0x06-rag-pipeline</code> &middot; File: <code>2-ingestion.py</code></div>
+    </div>
+
+    <div class="task">
+      <div class="task-head"><span class="task-num">3. RAG query function</span><span class="task-title">mandatory</span></div>
+      <p>Write <code>rag_query(question, store, n_chunks=4)</code> that retrieves context, builds a prompt with citations, calls Claude, and returns the answer.</p>
+<pre><code>$ ./3-main.py
+Q: "What is the vanishing gradient problem?"
+A: "The vanishing gradient problem occurs when gradients become
+    exponentially small... [source: sample_doc.txt, chunk 3]"</code></pre>
+      <div class="repo-info"><strong>Repo:</strong> &middot; GitHub: <code>zerub</code> &middot; Directory: <code>0x06-rag-pipeline</code> &middot; File: <code>3-rag_query.py</code></div>
+    </div>
+
+    <div class="task">
+      <div class="task-head"><span class="task-num">4. Full RAG pipeline</span><span class="task-title">#advanced</span></div>
+      <p>Write class <code>RAGPipeline</code> with <code>ingest(path)</code>, <code>ask(question)</code>, and <code>sources(question)</code> methods that wire everything together.</p>
+<pre><code>$ ./4-main.py
+Ingested 2 files (24 chunks total).
+Q: "Explain dropout regularisation."
+Sources: ['dl_notes.txt', 'dl_notes.txt', 'ml_intro.txt', ...]</code></pre>
+      <div class="repo-info"><strong>Repo:</strong> &middot; GitHub: <code>zerub</code> &middot; Directory: <code>0x06-rag-pipeline</code> &middot; File: <code>4-rag_pipeline.py</code></div>
+    </div>
+
+  </section>
+
+  <section class="card">
+    <h2>Files</h2>
+    <table>
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>0-chunking.py</code></td><td>Sentence-aware overlapping text splitter</td></tr>
+        <tr><td><code>1-doc_store.py</code></td><td>ChromaDB-backed document store</td></tr>
+        <tr><td><code>2-ingestion.py</code></td><td>File &rarr; chunks &rarr; vector store</td></tr>
+        <tr><td><code>3-rag_query.py</code></td><td>Retrieve context &rarr; call LLM &rarr; answer</td></tr>
+        <tr><td><code>4-rag_pipeline.py</code></td><td>End-to-end <code>RAGPipeline</code> class</td></tr>
+        <tr><td><code>0-main.py</code> &hellip; <code>4-main.py</code></td><td>Drivers</td></tr>
+        <tr><td><code>sample_doc.txt</code></td><td>Sample knowledge-base document</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+<footer>zerub &middot; emulated in the spirit of Holberton School project pages.</footer>
+<script>
+(function(){var questions=document.querySelectorAll('.quiz-q');var answered={};var summary=document.getElementById('quiz-summary');function refreshSummary(){var correct=0;var total=questions.length;Object.keys(answered).forEach(function(k){if(answered[k])correct++;});if(Object.keys(answered).length===0){summary.textContent='';return;}summary.textContent='Score: '+correct+' / '+total+(Object.keys(answered).length===total&&correct===total?' — nice.'  :'');}questions.forEach(function(q,qi){var correct=parseInt(q.getAttribute('data-correct'),10);var explain=q.getAttribute('data-explain')||'';var feedback=q.querySelector('.feedback');var labels=q.querySelectorAll('label');var radios=q.querySelectorAll('input[type="radio"]');radios.forEach(function(r){r.addEventListener('change',function(){var chosen=parseInt(r.value,10);var ok=chosen===correct;labels.forEach(function(l){l.classList.remove('correct','wrong');});labels[correct].classList.add('correct');if(!ok)labels[chosen].classList.add('wrong');feedback.classList.remove('ok','ko');feedback.classList.add('show',ok?'ok':'ko');feedback.textContent=(ok?'✓ Correct. ':'✗ Not quite. ')+explain;answered[qi]=ok;refreshSummary();});});});})();
+</script>
+  <script src="/dashboard/quiz-gate.js"></script>
+</body>
+</html>
