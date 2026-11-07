@@ -1,170 +1,58 @@
-# 0x06. RAG Pipeline — Retrieval-Augmented Generation
+# 0x06. RAG Pipeline
 
-## Resources
+## Description
 
-**Read or watch:**
-
-* [What is RAG? — IBM](https://research.ibm.com/blog/retrieval-augmented-generation-RAG)
-* [ChromaDB documentation](https://docs.trychroma.com/)
-* [LangChain text splitters](https://python.langchain.com/docs/concepts/text_splitters/)
-* [Anthropic — Building effective RAG systems](https://docs.anthropic.com/en/docs/build-with-claude/retrieval-augmented-generation)
-* [RAG vs fine-tuning — when to use each](https://www.pinecone.io/learn/rag-vs-fine-tuning/)
+A model only knows what it was trained on. Retrieval-augmented generation (RAG) fixes that by looking up relevant passages first and giving them to the model along with the question. In this project you split documents into chunks, store them in a vector database, ingest files, answer questions from the retrieved passages, and combine everything into one pipeline class.
 
 ## Learning Objectives
 
-At the end of this project, you are expected to be able to explain to anyone,
-**without the help of Google:**
+By the end of this project you should be able to explain, without looking anything up:
 
-* What RAG is and why it beats relying on a model's parametric memory
+* What RAG is and why it beats relying on a model's memory alone
 * What chunking is, why chunk size matters, and what overlap does
 * What a vector store is and how it differs from a SQL database
 * What the retrieve-then-read pattern is
-* How to reduce hallucinations with source citations
-* What a context window budget is and how retrieved chunks consume it
-* When RAG fails (low-quality chunks, retrieval misses, context overflow)
+* How source citations reduce hallucinations
+* What a context-window budget is and how retrieved chunks use it up
+* When RAG fails: poor chunks, retrieval misses and context overflow
 
 ## Requirements
 
-* Python 3.11+
-* `pip install anthropic chromadb sentence-transformers`
-* `ANTHROPIC_API_KEY` must be set
-* All functions must have a docstring
+* Python 3.11 or newer
+* Every file starts with `#!/usr/bin/env python3` and a module docstring
+* Code follows `pycodestyle`, and every function and class has a docstring
+* Your `ANTHROPIC_API_KEY` set as an environment variable (never written into a file)
 
----
-
-## Tasks
-
-### 0. Text chunking
-
-Write a function `chunk_text(text, chunk_size=500, overlap=50)` that splits
-`text` into overlapping chunks of at most `chunk_size` characters. Adjacent
-chunks share `overlap` characters at their boundary. Returns a `list[str]`.
-
-* Split on sentence boundaries when possible (split on `. ` before
-  hard-cutting on character count).
-* The last chunk may be shorter than `chunk_size`.
-
-**Prototype:** `def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:`
+## Setup
 
 ```
-$ ./0-main.py
-original length : 2048 chars
-chunk count     : 5
-chunk 0 length  : 498
-chunk 1 length  : 502
-overlap check   : True  (chunk[1][:50] in chunk[0])
+python3 -m venv .venv
+source .venv/bin/activate
+pip install anthropic chromadb sentence-transformers
+export ANTHROPIC_API_KEY="your-key-here"
 ```
-
-* **File:** `0-chunking.py`
-
----
-
-### 1. ChromaDB document store
-
-Write a class `DocStore` backed by an in-memory ChromaDB collection:
-
-* `DocStore(collection_name="docs")` — creates the collection.
-* `add_documents(texts: list[str], metadatas: list[dict] | None = None)` —
-  embeds and stores each text; auto-generates IDs.
-* `query(text: str, n_results: int = 3) -> list[dict]` — returns top-n
-  results as `[{"text": ..., "distance": ..., "metadata": ...}]`.
-* `count() -> int` — number of stored documents.
-
-**Prototype:** `class DocStore:`
-
-```
-$ ./1-main.py
-stored: 10 documents
-query: "how does gradient descent work?"
-result 1 (dist 0.18): "Gradient descent updates weights by..."
-result 2 (dist 0.31): "The learning rate controls the step size..."
-result 3 (dist 0.45): "Momentum accumulates past gradients..."
-```
-
-* **File:** `1-doc_store.py`
-
----
-
-### 2. Ingestion pipeline
-
-Write a function `ingest_file(path, store, chunk_size=500, overlap=50)` that:
-
-* Reads a plain-text file at `path`.
-* Chunks it using `chunk_text()` from task 0.
-* Stores chunks in a `DocStore` with metadata `{"source": path, "chunk_index": i}`.
-* Returns the number of chunks stored.
-
-**Prototype:** `def ingest_file(path: str, store: DocStore, chunk_size: int = 500, overlap: int = 50) -> int:`
-
-```
-$ ./2-main.py
-ingested "sample_doc.txt" → 12 chunks
-total documents in store: 12
-```
-
-A sample `sample_doc.txt` is provided in this directory.
-
-* **File:** `2-ingestion.py`
-
----
-
-### 3. RAG query function
-
-Write a function `rag_query(question, store, n_chunks=4)` that:
-
-* Retrieves the top `n_chunks` from `store` for `question`.
-* Builds a prompt that includes the retrieved context (with source metadata)
-  and the user's question.
-* Calls `claude-haiku-4-5-20251001` and returns the answer.
-* The system prompt must instruct Claude to answer **only** from the
-  provided context and cite sources.
-
-**Prototype:** `def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:`
-
-```
-$ ./3-main.py
-Q: "What is the vanishing gradient problem?"
-A: "The vanishing gradient problem occurs when gradients become
-    exponentially small during backpropagation [source: sample_doc.txt,
-    chunk 3]. This makes training deep networks difficult..."
-```
-
-* **File:** `3-rag_query.py`
-
----
-
-### 4. Full RAG pipeline
-
-Write a class `RAGPipeline` that wires everything together:
-
-* `RAGPipeline(collection_name="rag")` — constructor.
-* `ingest(path)` — calls `ingest_file` internally.
-* `ask(question, n_chunks=4) -> str` — calls `rag_query` internally.
-* `sources(question, n_chunks=4) -> list[str]` — returns only the source
-  file names retrieved (no LLM call).
-
-**Prototype:** `class RAGPipeline:`
-
-```
-$ ./4-main.py
-Ingested 2 files (24 chunks total).
-Q: "Explain dropout regularisation."
-A: "Dropout randomly zeroes activations during training..."
-Sources: ['dl_notes.txt', 'dl_notes.txt', 'ml_intro.txt', 'dl_notes.txt']
-```
-
-* **File:** `4-rag_pipeline.py`
-
----
 
 ## Files
 
 | File | Description |
 |---|---|
-| `0-chunking.py` | Sentence-aware overlapping text splitter |
-| `1-doc_store.py` | ChromaDB-backed document store |
-| `2-ingestion.py` | File → chunks → vector store |
-| `3-rag_query.py` | Retrieve context → call LLM → answer |
-| `4-rag_pipeline.py` | End-to-end `RAGPipeline` class |
-| `0-main.py` … `4-main.py` | Drivers |
-| `sample_doc.txt` | Sample knowledge-base document |
+| `0-chunking.py` | `chunk_text(text, chunk_size=500, overlap=50)`: sentence-aware overlapping chunks |
+| `1-doc_store.py` | `DocStore`: a document store backed by an in-memory ChromaDB collection |
+| `2-ingestion.py` | `ingest_file(path, store, ...)`: reads a file, chunks it and stores the chunks |
+| `3-rag_query.py` | `rag_query(question, store, n_chunks=4)`: retrieves context and asks the model |
+| `4-rag_pipeline.py` | `RAGPipeline`: ingestion and querying behind one class |
+| `0-main.py` … `4-main.py` | Small programs that call each function and print the result |
+| `sample_doc.txt` | A short document to ingest and ask questions about |
+
+## Usage
+
+```
+$ python3 4-main.py
+```
+
+## Resources
+
+* [What is RAG? (IBM Research)](https://research.ibm.com/blog/retrieval-augmented-generation-RAG)
+* [ChromaDB documentation](https://docs.trychroma.com/)
+* [LangChain text splitters](https://python.langchain.com/docs/concepts/text_splitters/)
+* [RAG vs fine-tuning](https://www.pinecone.io/learn/rag-vs-fine-tuning/)
