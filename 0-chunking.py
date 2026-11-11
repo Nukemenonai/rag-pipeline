@@ -1,21 +1,39 @@
 #!/usr/bin/env python3
 """text chunking"""
+import re
 
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-    """Splits on sentence boundaries when possible; 
-    adjacent chunks share overlap characters."""
-    if not text: return []
-    if len(text) <= chunk_size: return [text]
-    if chunk_size <= 0:
-        raise ValueError("chunk_size must be positive")
-    if overlap >= chunk_size:
-        raise ValueError("overlap must be strictly less than chunk_size")
+    if not text:
+        return []
+
+    if len(text) <= chunk_size:
+        return [text]
+
     chunks = []
-    step = chunk_size - overlap
-    for i in range(0, len(text), step):
-        chunk = text[i: i+chunk_size]
-        chunks.append(chunk)
-        if i + chunk_size >= len(text):
+    start = 0
+    text_length = len(text)
+
+    while start < text_length:
+        remaining = text_length - start
+
+        if remaining <= chunk_size:
+            chunks.append(text[start:])
             break
+
+        window = text[start : start + chunk_size]
+
+        cut = -1
+        for i in range(len(window) - 1, 0, -1):
+            if window[i - 1] in ".!?" and window[i].isspace():
+                cut = i
+                break
+
+        if cut <= overlap:
+            cut = chunk_size
+
+        chunks.append(window[:cut])
+
+        start += cut - overlap
+
     return chunks
