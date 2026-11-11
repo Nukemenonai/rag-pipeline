@@ -8,7 +8,7 @@ def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]
     if chunk_size <= 0:
         raise ValueError("chunk_size must be at least 1 and overlap must be between 0 and chunk_size - 1")
     if overlap >= chunk_size:
-        raise ValueError("overlap must be strictly less than chunk_size")
+        raise ValueError("chunk_size must be at least 1 and overlap must be between 0 and chunk_size - 1")
     if not text:
         return []
 
