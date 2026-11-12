@@ -23,6 +23,10 @@ def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:
     )
 
     chunks = store.query(question, n_chunks)
+    context = "\n\n".join(
+    "[source: {}, chunk {}]\n{}".format(
+        c["metadata"]["source"], c["metadata"]["chunk"], c["text"])
+    for c in chunks)
     if not chunks:
         return "I don't know."
 
@@ -32,10 +36,9 @@ def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:
         system=f"""
             answer the user's question.
 
-            answer using only the context provided in chunks: {chunks}. 
+            answer using only the context provided in context: {context}. 
             cite every claim in the same form: 
             [source: file, chunk N]
-            <chunk text>
 
             if the context does not contain the answer, say you don't know. 
         """,
