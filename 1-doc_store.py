@@ -12,6 +12,8 @@ class DocStore:
         )
 
     def add_documents(self, documents: list[str], metadatas: list[dict] | None = None) -> None:
+        if not documents: 
+            raise ValueError("documents must not be empty")
         ids = [f"id_{uuid.uuid4().hex}" for doc in documents] 
         self.collection.upsert(
             ids=ids,
