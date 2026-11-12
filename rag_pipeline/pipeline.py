@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """complete RAG pipeline"""
-chunk_text = __import__('0-chunking').chunk_text
-DocStore = __import__('1-doc_store').DocStore
-ingest_file = __import__('2-ingestion').ingest_file
-rag_query = __import__('3-rag_query').rag_query
+from .chunking import chunk_text
+from .doc_store import DocStore
+from .ingestion import ingest_file
+from .rag_query import rag_query
 
 
 class RAGPipeline:

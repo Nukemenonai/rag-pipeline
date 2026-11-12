@@ -2,14 +2,14 @@
 """ingestion pipeline"""
 import os
 
-chunk_text = __import__('0-chunking').chunk_text
-DocStore = __import__('1-doc_store').DocStore
+from .chunking import chunk_text
+from .doc_store import DocStore
 
 
 def ingest_file(path: str, store: DocStore, chunk_size: int = 500, overlap: int = 50) -> int:
     """
     Reads a text file, cuts it with chunk_text
-        and stores the chunks in a DocStore (task 1), each with its source and position
+        and stores the chunks in a DocStore, each with its source and position
     returns: 
         int: the number of chunks added to the store. It is 0 when nothing was added.
     """

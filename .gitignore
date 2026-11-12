@@ -1,0 +1,9 @@
+# Python bytecode, at any depth
+__pycache__/
+*.pyc
+
+# Per-project virtual environments
+.venv/
+
+# macOS
+.DS_Store

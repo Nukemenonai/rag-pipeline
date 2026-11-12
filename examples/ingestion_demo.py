@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Driver for task 2: run with .venv/bin/python 2-main.py"""
+"""Demo of rag_pipeline.ingestion: run with python -m examples.ingestion_demo"""
 import os
 import tempfile
 
-DocStore = __import__('1-doc_store').DocStore
-ingest_file = __import__('2-ingestion').ingest_file
+from rag_pipeline.doc_store import DocStore
+from rag_pipeline.ingestion import ingest_file
 
 SENTENCES = [
     "Gradient descent steps the weights against the gradient of the loss.",

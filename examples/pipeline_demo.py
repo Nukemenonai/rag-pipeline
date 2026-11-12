@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Driver for task 4: run with .venv/bin/python 4-main.py
+"""Demo of rag_pipeline.pipeline: run with python -m examples.pipeline_demo
 
 Needs ANTHROPIC_API_KEY in the environment.
 """
 import os
 import tempfile
 
-RAGPipeline = __import__('4-rag_pipeline').RAGPipeline
+from rag_pipeline.pipeline import RAGPipeline
 
 NOTES = {
     "dl_notes.txt": [

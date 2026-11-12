@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Driver for task 3: run with .venv/bin/python 3-main.py
+"""Demo of rag_pipeline.rag_query: run with python -m examples.rag_query_demo
 
 Needs ANTHROPIC_API_KEY in the environment.
 """
@@ -7,9 +7,9 @@ import os
 import re
 import tempfile
 
-DocStore = __import__('1-doc_store').DocStore
-ingest_file = __import__('2-ingestion').ingest_file
-rag_query = __import__('3-rag_query').rag_query
+from rag_pipeline.doc_store import DocStore
+from rag_pipeline.ingestion import ingest_file
+from rag_pipeline.rag_query import rag_query
 
 SENTENCES = [
     "Gradient descent steps the weights against the gradient of the loss.",

@@ -1,58 +1,56 @@
-# 0x06. RAG Pipeline
+# rag-pipeline
 
-## Description
-
-A model only knows what it was trained on. Retrieval-augmented generation (RAG) fixes that by looking up relevant passages first and giving them to the model along with the question. In this project you split documents into chunks, store them in a vector database, ingest files, answer questions from the retrieved passages, and combine everything into one pipeline class.
-
-## Learning Objectives
-
-By the end of this project you should be able to explain, without looking anything up:
-
-* What RAG is and why it beats relying on a model's memory alone
-* What chunking is, why chunk size matters, and what overlap does
-* What a vector store is and how it differs from a SQL database
-* What the retrieve-then-read pattern is
-* How source citations reduce hallucinations
-* What a context-window budget is and how retrieved chunks use it up
-* When RAG fails: poor chunks, retrieval misses and context overflow
-
-## Requirements
-
-* Python 3.11 or newer
-* Every file starts with `#!/usr/bin/env python3` and a module docstring
-* Code follows `pycodestyle`, and every function and class has a docstring
-* Your `ANTHROPIC_API_KEY` set as an environment variable (never written into a file)
+A small retrieval-augmented generation (RAG) library in Python. It splits text files into chunks, stores them in an in-memory ChromaDB collection, retrieves the chunks closest to a question and asks Claude to answer from them, citing each source as `[source: file, chunk N]`. When nothing is retrieved it answers `I don't know.` without calling the API.
 
 ## Setup
+
+Python 3.11 or newer.
 
 ```
 python3 -m venv .venv
 source .venv/bin/activate
-pip install anthropic chromadb sentence-transformers
+pip install -r requirements.txt
 export ANTHROPIC_API_KEY="your-key-here"
 ```
 
-## Files
+The first run downloads ChromaDB's default embedding model (about 79 MB) once. Chunking and retrieval run locally; only answering calls the API.
 
-| File | Description |
+## Use
+
+```python
+from rag_pipeline.pipeline import RAGPipeline
+
+pipeline = RAGPipeline(n_chunks=4, chunk_size=500, overlap=50)
+pipeline.ingest("notes.txt")                      # -> number of chunks stored
+print(pipeline.ask("What does the note say?"))    # answer with citations
+print(pipeline.sources("What does the note say?"))  # files of the retrieved chunks
+```
+
+## Layout
+
+| Path | Description |
 |---|---|
-| `0-chunking.py` | `chunk_text(text, chunk_size=500, overlap=50)`: sentence-aware overlapping chunks |
-| `1-doc_store.py` | `DocStore`: a document store backed by an in-memory ChromaDB collection |
-| `2-ingestion.py` | `ingest_file(path, store, ...)`: reads a file, chunks it and stores the chunks |
-| `3-rag_query.py` | `rag_query(question, store, n_chunks=4)`: retrieves context and asks the model |
-| `4-rag_pipeline.py` | `RAGPipeline`: ingestion and querying behind one class |
-| `0-main.py` … `4-main.py` | Small programs that call each function and print the result |
-| `sample_doc.txt` | A short document to ingest and ask questions about |
+| `rag_pipeline/chunking.py` | `chunk_text(text, chunk_size=500, overlap=50)`: sentence-aware overlapping chunks |
+| `rag_pipeline/doc_store.py` | `DocStore`: a document store backed by an in-memory ChromaDB collection |
+| `rag_pipeline/ingestion.py` | `ingest_file(path, store, ...)`: reads a file, chunks it and stores the chunks |
+| `rag_pipeline/rag_query.py` | `rag_query(question, store, n_chunks=4)`: retrieves context and asks the model |
+| `rag_pipeline/pipeline.py` | `RAGPipeline`: ingestion and querying behind one class |
+| `examples/` | Small programs that call each module and print the result |
 
-## Usage
+## Examples
+
+Run from the repository root:
 
 ```
-$ python3 4-main.py
+python -m examples.chunking_demo
+python -m examples.doc_store_demo
+python -m examples.ingestion_demo
+python -m examples.rag_query_demo    # needs ANTHROPIC_API_KEY
+python -m examples.pipeline_demo     # needs ANTHROPIC_API_KEY
 ```
 
-## Resources
+## Notes
 
-* [What is RAG? (IBM Research)](https://research.ibm.com/blog/retrieval-augmented-generation-RAG)
-* [ChromaDB documentation](https://docs.trychroma.com/)
-* [LangChain text splitters](https://python.langchain.com/docs/concepts/text_splitters/)
-* [RAG vs fine-tuning](https://www.pinecone.io/learn/rag-vs-fine-tuning/)
+* The store lives in memory only; nothing is written to disk.
+* Every document gets a unique id, so ingesting the same file twice stores its chunks twice.
+* Chunk metadata is `{"source": <file name>, "chunk": <index from 0>}`.

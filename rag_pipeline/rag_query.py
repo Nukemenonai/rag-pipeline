@@ -5,7 +5,7 @@ chunk retrieval module
 import os
 from anthropic import Anthropic
 
-DocStore = __import__('1-doc_store').DocStore
+from .doc_store import DocStore
 
 
 def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:

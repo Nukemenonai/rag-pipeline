@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Driver for task 1: run with .venv/bin/python 1-main.py"""
-DocStore = __import__('1-doc_store').DocStore
+"""Demo of rag_pipeline.doc_store: run with python -m examples.doc_store_demo"""
+from rag_pipeline.doc_store import DocStore
 
 DOCS = [
     "Gradient descent steps the weights against the gradient of the loss.",

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Driver for task 0: run with .venv/bin/python 0-main.py"""
-chunk_text = __import__('0-chunking').chunk_text
+"""Demo of rag_pipeline.chunking: run with python -m examples.chunking_demo"""
+from rag_pipeline.chunking import chunk_text
 
 SENTENCES = [
     "Gradient descent steps the weights against the gradient of the loss.",
