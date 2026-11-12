@@ -24,6 +24,8 @@ class DocStore:
         )
 
     def query(self, text: str, n_results: int = 4) -> list[dict]:
+        if n_results < 1:
+            raise ValueError("n_results must be at least 1")
         r = self.collection.query(
             query_texts=[text],
             n_results=n_results
