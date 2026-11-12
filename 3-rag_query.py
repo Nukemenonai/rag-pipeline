@@ -14,6 +14,8 @@ def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:
     builds a prompt that labels each chunk with its source, 
     asks Claude once, and returns the answer text.
     """
+    if n_chunks < 1:
+        raise ValueError('n_chunks must be at least 1')
     client = Anthropic(
         api_key=os.environ.get(
             "ANTHROPIC_API_KEY"
@@ -22,7 +24,7 @@ def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:
 
     chunks = store.query(question, n_chunks)
     if not chunks:
-        return "I don't know"
+        return "I don't know."
 
     response = client.messages.create(
         model="claude-haiku-5-5",
@@ -33,6 +35,7 @@ def rag_query(question: str, store: DocStore, n_chunks: int = 4) -> str:
             answer using only the context provided in chunks: {chunks}. 
             cite every claim in the same form: 
             [source: file, chunk N]
+            <chunk text>
 
             if the context does not contain the answer, say you don't know. 
         """,
