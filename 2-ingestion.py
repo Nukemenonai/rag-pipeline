@@ -17,6 +17,8 @@ def ingest_file(path: str, store: DocStore, chunk_size: int = 500, overlap: int 
     filename = os.path.basename(path)
     with open(path) as f:
         text = f.read()
+        if not text:
+            return 0
         chunks = chunk_text(text, chunk_size, overlap)
     metadatas = [
         {"source": filename, "chunk": i}
